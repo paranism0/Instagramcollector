@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
 from jose import jwt , JWTError
-from ..models import env , credential
+from ..models import credential
 from fastapi import HTTPException , status
 
 class Jwt:
-  def __init__(self):
-    vars = env.Settings()
+  def __init__(self ,vars ):
     self.SECRET_KEY = vars.SECRET_KEY
     self.ALGORITHM = vars.ALGORITHM
     self.credentials_exception = HTTPException(

@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Any
 
 class Token(BaseModel):
     access_token: str
@@ -8,13 +9,17 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: str | None = None
 
-
 class User(BaseModel):
     username: str
     email: str | None = None
     full_name: str | None = None
-    disabled: bool | None = None
 
+class NewUser(BaseModel):
+    full_name: str
+    username: str
+    email: str
+    password: str
 
 class UserInDB(User):
-    hashed_password: str
+    _id : Any
+    password : str

@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 requests = "==2.31.0"
+bson = "*"
+motor = "*"
+asgiref = "*"
 
 [dev-packages]
 
