@@ -36,6 +36,6 @@ class handleInstagram(restapi.handleInstaAccounts.Accounts):
             cookie = (await self.select({"_id":account_id},self.accounts)).get("cookie")
             client = Client(username="" , password="" , cookie = cookie)
             followers = client.user_followers(client.username_info(username)["user"]["pk"] , client.generate_uuid())
-            return {"success":True , "follower_list" : [p["username"] for p in followers["users"]]}
+            return {"success":True , "followers_list" : [p["username"] for p in followers["users"]]}
         except Exception as e:
             handleInstagram.raise_error("Bad Request")

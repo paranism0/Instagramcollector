@@ -5,7 +5,7 @@
 
 # -*- coding: utf-8 -*-
 
-from requests import session , get
+from requests import session
 import logging
 import hmac
 import hashlib

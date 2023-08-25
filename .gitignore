@@ -1,9 +1,9 @@
 # prevent leaking password by ignoring .env file
 
-*.env
-*.env.example
-*.env.local
-*.env.staging
+# *.env
+# *.env.example
+# *.env.local
+# *.env.staging
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.

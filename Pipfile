@@ -4,11 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+fastapi = {version = "==0.101.1", extras = ["all"]}
 requests = "==2.31.0"
-bson = "*"
-motor = "*"
-asgiref = "*"
-pydantic = "==2.1.1"
+motor = "==3.1.2"
+python-jose = {version = "==3.3.0", extras = ["cryptography"]}
+passlib = {version = "==1.7.4", extras = ["bcrypt"]}
+urllib3 = "==2.0.4"
 
 [dev-packages]
 
