@@ -9,7 +9,9 @@ it can get followers of an instagram username
 
 ## Installation
 
+```
 pipenv install --dev
+```
 
 After that install mongodb and run the mongod service
 
