@@ -5,7 +5,7 @@
 
 # -*- coding: utf-8 -*-
 
-from requests import session
+from requests import session , get
 import logging
 import hmac
 import hashlib
@@ -14,17 +14,17 @@ import json
 import re
 import time
 import random
+from .compatpatch import ClientCompatPatch
 from datetime import datetime
 from .compat import (
     compat_urllib_parse,
     compat_urllib_parse_urlparse
     )
 from .errors import (
-    ClientLoginRequiredError, ClientCookieExpiredError
+    ClientLoginRequiredError
 )
 
 from .constants import Constants
-from .http import ClientCookieJar
 from .endpoints import (
     AccountsEndpointsMixin,
     UsersEndpointsMixin
@@ -132,22 +132,24 @@ class Client(AccountsEndpointsMixin,UsersEndpointsMixin, object):
                 kwargs.pop('version_code', None) or user_settings.get('version_code') or
                 Constants.VERSION_CODE)
 
-        cookie_string = kwargs.pop('cookie', None) or user_settings.get('cookie')
-        cookie_jar = ClientCookieJar(cookie_string=cookie_string)
-        if cookie_string and cookie_jar.auth_expires and int(time.time()) >= cookie_jar.auth_expires:
-            raise ClientCookieExpiredError('Cookie expired at {0!s}'.format(cookie_jar.auth_expires))
+        cookie_jar = kwargs.pop('cookie', None) or user_settings.get('cookie')
 
         # ad_id must be initialised after cookie_jar/opener because
         # it relies on self.authenticated_user_name
         self.ad_id = (
             kwargs.pop('ad_id', None) or user_settings.get('ad_id') or
-            self.generate_adid())
+            self.generate_adid()
+        )
 
-        if not cookie_string:   # [TODO] There's probably a better way than to depend on cookie_string
+        if not cookie_jar:   # [TODO] There's probably a better way than to depend on cookie_string
             if not self.username or not self.password:
                 raise ClientLoginRequiredError('login_required', code=400)
             self.login()
-
+        else:
+            self.session.cookies["csrftoken"] = cookie_jar["csrftoken"]
+            self.session.cookies["mid"] = cookie_jar["mid"]
+            self.session.cookies["sessionid"] = cookie_jar["sessionid"]
+            self.session.cookies["ds_user_id"] = cookie_jar["ds_user_id"]
         self.logger.debug('USERAGENT: {0!s}'.format(self.user_agent))
         super(Client, self).__init__()
 
@@ -160,7 +162,7 @@ class Client(AccountsEndpointsMixin,UsersEndpointsMixin, object):
             'device_id': self.device_id,
             'ad_id': self.ad_id,
             'session_id': self.session_id,
-            'cookie': self.cookie_jar.dump(),
+            'cookie': json.dumps(self.cookie_jar),
             'created_ts': int(time.time())
         }
 
@@ -226,6 +228,20 @@ class Client(AccountsEndpointsMixin,UsersEndpointsMixin, object):
             'chipset': kwargs.pop('phone_chipset', None) or Constants.PHONE_CHIPSET,
             'version_code': kwargs.pop('version_code', None) or Constants.VERSION_CODE})
 
+    def user_followers(self, user_id, rank_token, **kwargs):
+
+        endpoint = 'friendships/{user_id!s}/followers/'.format(**{'user_id': user_id})
+        query_params = {
+            'rank_token': rank_token,
+        }
+        query_params.update(kwargs)
+        res = self._call_api(endpoint=endpoint, query=query_params , method="GET")
+        if self.auto_patch:
+            [ClientCompatPatch.list_user(u, drop_incompat_keys=self.drop_incompat_keys)
+             for u in res.get('users', [])]
+        return res
+
+
     @staticmethod
     def validate_useragent(value):
         """
@@ -256,29 +272,8 @@ class Client(AccountsEndpointsMixin,UsersEndpointsMixin, object):
             'parsed_params': parse_params
         }
 
-    def get_cookie_value(self, key, domain=''):
-        now = int(time.time())
-        eternity = now + 100 * 365 * 24 * 60 * 60   # future date for non-expiring cookies
-        if not domain:
-            domain = compat_urllib_parse_urlparse(self.API_URL).netloc
-
-        for cookie in sorted(
-                self.cookie_jar, key=lambda c: c.expires or eternity, reverse=True):
-            # don't return expired cookie
-            if cookie.expires and cookie.expires < now:
-                continue
-            # cookie domain may be i.instagram.com or .instagram.com
-            cookie_domain = cookie.domain
-            # simple domain matching
-            if cookie_domain.startswith('.'):
-                cookie_domain = cookie_domain[1:]
-            if not domain.endswith(cookie_domain):
-                continue
-
-            if cookie.name.lower() == key.lower():
-                return cookie.value
-
-        return None
+    def get_cookie_value(self, key):
+        return self.cookie_jar.get(key,None)
 
     @property
     def csrftoken(self):
@@ -327,7 +322,7 @@ class Client(AccountsEndpointsMixin,UsersEndpointsMixin, object):
     @property
     def cookie_jar(self):
         """The client's cookiejar instance."""
-        return self.session.cookies
+        return dict(self.session.cookies)
 
     @property
     def default_headers(self):
@@ -402,7 +397,7 @@ class Client(AccountsEndpointsMixin,UsersEndpointsMixin, object):
             modified_seed = sha2.hexdigest()
         return self.generate_uuid(False, modified_seed)
 
-    def _call_api(self, endpoint, params=None, query=None, return_response=False, unsigned=False, version='v1'):
+    def _call_api(self, endpoint, params=None, query=None, return_response=False, unsigned=False, version='v1' , method="POST"):
         """
         Calls the private api.
 
@@ -437,7 +432,10 @@ class Client(AccountsEndpointsMixin,UsersEndpointsMixin, object):
                     post_params = params
                 data = compat_urllib_parse.urlencode(post_params).encode('ascii')
         try:
-            response = self.session.post(url,data = data , headers=headers , verify= False )
+            if method == "POST":
+              response = self.session.post(url = url,data = data , headers=headers ,verify=False , proxies={"http":"http://127.0.0.1:8080","https":"http://127.0.0.1:8080"})
+            else:
+               response = self.session.get(url=url,headers=headers ,verify=False , proxies={"http":"http://127.0.0.1:8080","https":"http://127.0.0.1:8080"})
         except Exception as e:
             raise(e)
 
@@ -445,7 +443,6 @@ class Client(AccountsEndpointsMixin,UsersEndpointsMixin, object):
             return response.text
 
         json_response = response.json()
-
         if json_response.get('message', '') == 'login_required':
             raise ClientLoginRequiredError(
                 json_response.get('message'), code=response.status_code,

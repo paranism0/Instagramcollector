@@ -11,6 +11,8 @@ class Database:
         self.db = self.client.instaCollector
     async def insert(self , data , collection):
         return await collection.insert_one(data)
+    async def update(self, filter , update , collection , upsert = True):
+        await collection.update_many(filter , update , upsert = upsert)
     async def select(self , filter , collection , many=False):
         if many:
             return await collection.find(filter)

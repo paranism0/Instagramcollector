@@ -1,10 +1,12 @@
-from fastapi import FastAPI , HTTPException , Depends
+from fastapi import FastAPI , Depends , Form
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 from .models.credential import Token , User , NewUser
 from .authsystem.authorization import authorizationSystem
+import instagram
 
 auth = authorizationSystem()
+instaObj = instagram.handleInstagram()
 app = FastAPI()
 
 async def get_current_active_user(
@@ -26,6 +28,17 @@ async def read_users_me(
 ):
     return current_user
 
-@app.post("/users/add")
+@app.post("/users/create")
 async def create_user(user : Annotated[NewUser , Depends(auth.create_new_user)]):
     return user
+
+@app.post("/users/addAccount")
+async def add_instagram_account(user : Annotated[User,Depends(get_current_active_user)] , form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    result = await instaObj.login(form_data.username , form_data.password)
+    return result
+
+@app.post("/users/getfollowers")
+async def get_followers(user : Annotated[User,Depends(get_current_active_user)] , \
+    username: Annotated[str, Form()], account_id: Annotated[str, Form()]):
+    followers = await instaObj.get_followers(account_id , username)
+    return followers

@@ -16,7 +16,7 @@ class AccountsEndpointsMixin(object):
     def login(self):
         """Login."""
         prelogin_params = self._call_api(
-            'si/fetch_headers/',
+            endpoint = 'si/fetch_headers/',
             params='',
             query={'challenge_type': 'signup', 'guid': self.generate_uuid(True)},
             return_response=True)
@@ -38,7 +38,7 @@ class AccountsEndpointsMixin(object):
         }
 
         login_response = self._call_api(
-            'accounts/login/', params=login_params, return_response=True)
+            endpoint = 'accounts/login/', params=login_params, return_response=True)
 
         if not self.csrftoken:
             raise ClientError(
@@ -56,7 +56,7 @@ class AccountsEndpointsMixin(object):
     def current_user(self):
         """Get current user info"""
         params = self.authenticated_params
-        res = self._call_api('accounts/current_user/', params=params, query={'edit': 'true'})
+        res = self._call_api(endpoint = 'accounts/current_user/', params=params, query={'edit': 'true'})
         if self.auto_patch:
             ClientCompatPatch.user(res['user'], drop_incompat_keys=self.drop_incompat_keys)
         return res
@@ -70,4 +70,4 @@ class AccountsEndpointsMixin(object):
             'device_id': self.device_id,
             '_uuid': self.uuid
         }
-        return self._call_api('accounts/logout/', params=params, unsigned=True)
+        return self._call_api(endpoint =  'accounts/logout/', params=params, unsigned=True)

@@ -17,8 +17,3 @@ class ClientLoginError(ClientError):
 class ClientLoginRequiredError(ClientError):
     """Raised when login is required."""
     pass
-
-
-class ClientCookieExpiredError(ClientError):
-    """Raised when cookies have expired."""
-    pass

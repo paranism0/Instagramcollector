@@ -20,6 +20,36 @@ class ClientCompatPatch(object):
             obj.pop(k, None)
 
     @classmethod
+    def list_user(cls, user, drop_incompat_keys=False):
+        """
+        Patch a list user object, example in
+        :meth:`Client.user_following`, :meth:`Client.user_followers`, :meth:`Client.search_users`
+        """
+        user['id'] = str(user['pk'])
+        user['profile_picture'] = user['profile_pic_url']
+        if drop_incompat_keys:
+            cls._drop_keys(
+                user,
+                [
+                    'byline',
+                    'follower_count',
+                    'friendship_status',
+                    'has_anonymous_profile_picture',
+                    'has_chaining',
+                    'is_favorite',
+                    'is_private',
+                    'is_unpublished',
+                    'is_verified',
+                    'mutual_followers_count',
+                    'pk',
+                    'profile_pic_url',
+                    'social_context',
+                    'unseen_count',
+                ]
+            )
+        return user
+
+    @classmethod
     def user(cls, user, drop_incompat_keys=False):
         """Patch a user object """
         user['id'] = str(user['pk'])
