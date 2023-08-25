@@ -1,5 +1,5 @@
 # Instagramcollector
-Instagram data collector API
+Instagram data collector RestAPI
 
 
 # What is it?
