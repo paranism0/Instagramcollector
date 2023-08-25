@@ -15,7 +15,11 @@ pipenv install --dev
 
 After that install mongodb and run the mongod service
 
-then edit .env file if needed
+you should change default secret in .env file by generating the new one using this command :
+
+```
+openssl rand -hex 32
+```
 
 ## Run
 
