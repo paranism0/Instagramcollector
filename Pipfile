@@ -8,6 +8,7 @@ requests = "==2.31.0"
 bson = "*"
 motor = "*"
 asgiref = "*"
+pydantic = "==2.1.1"
 
 [dev-packages]
 
